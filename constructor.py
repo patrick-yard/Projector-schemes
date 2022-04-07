@@ -109,34 +109,69 @@ class Constructor():
         self.pattern = pattern
         self.params = params
         self.final_phases = final_phases
+        
+        self.U_tot = np.eye(self.dim,dtype = complex)   
 
 
-    def total_U(self) -> np.array:
+    def ideal_total_U(self,zero_phase = None) -> np.array:
 
-        U_tot = np.eye(self.dim,dtype = complex)      
-        
-        
-        if self.final_phases:
-            
-            phase_comps = [PhaseShifter(self.dim,i,p) for i,p in enumerate(self.final_phases)]
+        '''Generate total unitary from a given pattern of UnitCells with or without final phases
+            zero_phase: if present, should be a list of indices of any external phases to be set to 0.'''
 
-            for phase in phase_comps:
-                
-                U_tot = U_tot @ phase.global_U()
-        
-        
-        comp_array = [UnitCell(self.dim,mode,p) for mode,p in zip(self.pattern,self.params)]
+        if not zero_phase: zero_phase = [False for _ in self.params]
+
+        component_array = []
          
-        
-        comp_array.reverse()
+        for i,(mode,p) in enumerate(zip(self.pattern,self.params)):
 
-           
-        for i,comp in enumerate(comp_array):
+            if zero_phase[i]: p[0] = 0
+
+            component_array.append(UnitCell(self.dim,mode,p))
+
+
+        if self.final_phases:
+
+            for i,p in enumerate(self.final_phases):
+
+                component_array.append(PhaseShifter(self.dim,i,p))
+       
+        component_array.reverse()
+        
+        return self.generate_U(component_array)
+
+
+    def arbitrary_total_U(self,func_pattern:list) -> np.array:
+
+        '''Function to construct total unitary for an arbitrary array of components - not just UnitCell building blocks
+        func_pattern: list containg functions for each component to be combined '''
+
+        component_array = []
+
+        for mode,param,func in zip(self.pattern,self.params,func_pattern):
+
+            component_array.append(func(self.dim,mode,param))
+
+        component_array.reverse()
+
+        
+
+        return self.generate_U(component_array)
+
+
+    
+    def generate_U(self,comp_array:list) -> np.array:
+
+        '''Function to take an array of components and combine them into a total unitary'''
+
+        for comp in comp_array:
             
           
-            U_tot = U_tot @ comp.global_U()
-
+            self.U_tot = self.U_tot @ comp.global_U()
         
-        return U_tot
+        return self.U_tot
+
+
+
+
 
 

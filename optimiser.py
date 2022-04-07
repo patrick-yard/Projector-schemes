@@ -1,3 +1,4 @@
+
 import numpy as np
 from constructor import Constructor
 
@@ -5,7 +6,7 @@ from constructor import Constructor
 '''Functions to deal with phase optimisation'''
 
 
-def gen_U_from_param_array(test_params:list,
+def gen_ideal_U_from_param_array(test_params:list,
                             dim:int, 
                             pattern:list, 
                             final_phase: list or None
@@ -42,7 +43,7 @@ def gen_U_from_param_array(test_params:list,
    
     system = Constructor(dim,pattern,params,final_phase)
     
-    return system.total_U()
+    return system.ideal_total_U()
 
 
 def cost_func(test_params:list,
@@ -64,10 +65,18 @@ def cost_func(test_params:list,
     
     
     
-    W = gen_U_from_param_array(test_params,dim,pattern,final_phase)
+    W = gen_ideal_U_from_param_array(test_params,dim,pattern,final_phase)
     U = target_U
 
     return np.sum(abs(W-U)**2)
+
+# def subset_cost_func(test_params:list,
+#               dim:int, 
+#               target_U:np.array, 
+#               pattern:list, 
+#               final_phase: list or None
+#               ) -> float:
+
 
 
 def fidelity(M_opt:np.array, M: np.array) -> float:
