@@ -92,46 +92,57 @@ class UnitCell(BaseClass):
         
         PS = PhaseShifter(self.dim,self.mode + 1,p[0])
         BS = BeamSplitter(self.dim,self.mode,p[1])
-
-        return BS.U(p[1]) @ PS.U(p[0])
+        
+        # return BS.U(BS.params) @  PS.U(PS.params)
+        # return PS.U(PS.params) @  BS.U(BS.params)
+        return BS.U(BS.params)
 
 class Constructor():
 
-    def __init__(self,dim:int,pattern:list,params:list,final_phases:list):
+    def __init__(self,dim:int,pattern:list,params:list,out_phases:list,in_phases:list):
 
         '''Class to construct arbitrary mesh of UnitCell components
         dim: total system dimension
         pattern: list of modes for the each element of the circuit. Circuit built left to right
         params: list of tuples of the corresponding parameters for each unit cell in pattern
-        final_phases: array of final phase shifts.'''
+        out_phases: array of output phase shifts.
+        in_phases: array of input phases
+        '''
 
         self.dim = dim
         self.pattern = pattern
         self.params = params
-        self.final_phases = final_phases
-        
+        self.out_phases = out_phases
+        self.in_phases = in_phases
         self.U_tot = np.eye(self.dim,dtype = complex)   
 
 
-    def ideal_total_U(self,zero_phase = None) -> np.array:
+    def ideal_total_U(self,zero_phases = None) -> np.array:
 
         '''Generate total unitary from a given pattern of UnitCells with or without final phases
             zero_phase: if present, should be a list of indices of any external phases to be set to 0.'''
 
-        if not zero_phase: zero_phase = [False for _ in self.params]
+        if not zero_phases: zero_phases = [False for _ in self.params]
 
         component_array = []
          
+        if self.in_phases:
+
+            for i,p in enumerate(self.in_phases):
+
+                component_array.append(PhaseShifter(self.dim,i,p))
+        
+    
         for i,(mode,p) in enumerate(zip(self.pattern,self.params)):
 
-            if zero_phase[i]: p[0] = 0
+            if zero_phases[i]: p[0] = 0
 
             component_array.append(UnitCell(self.dim,mode,p))
 
 
-        if self.final_phases:
+        if self.out_phases:
 
-            for i,p in enumerate(self.final_phases):
+            for i,p in enumerate(self.out_phases):
 
                 component_array.append(PhaseShifter(self.dim,i,p))
        
@@ -153,8 +164,7 @@ class Constructor():
 
         component_array.reverse()
 
-        
-
+    
         return self.generate_U(component_array)
 
 
